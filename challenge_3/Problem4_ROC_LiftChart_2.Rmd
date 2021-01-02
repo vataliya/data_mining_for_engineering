@@ -1,0 +1,57 @@
+---
+title: "Problem4_ROC_LiftChart_2"
+output: pdf_document
+---
+
+```{r include=FALSE}
+#install.packages('party')
+#install.packages('ROCR')
+#install.packages('rpart')
+require(party)
+require(ROCR)
+require(rpart)
+```
+
+### Question 2-
+
+```{r}
+df <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
+## view the first few rows of the data
+summary(df)
+head(df)
+```
+
+```{r}
+# Split randomly onto 70% training and 30% testing set
+# Write your code below
+set.seed(123)
+divide <- sample(2,nrow(df),replace = TRUE, prob = c(0.7,0.3))
+x_train <- df[divide == 1,]
+x_test <- df[divide == 2,]
+```
+
+```{r}
+# Do Not change the following code
+mylogit <- glm(admit ~ ., data = x_train, family = "binomial")
+summary(mylogit)
+```
+
+
+
+```{r}
+# Use the above model and the validation set to create a ROC curve and Lift Chrat(Gaine chart)
+# Write your code below
+
+# ROC
+prob <- predict(mylogit, newdata = x_test, type = "response")
+pred <- prediction(prob, x_test$admit)
+roc <- performance(pred,"tpr","fpr")
+plot(roc, main="ROC curve", colorize=T)
+```
+
+```{r}
+# Lift Curve
+lift <- performance(pred,"tpr","rpp")
+plot(lift, main="Lift curve", colorize=T)
+```
+

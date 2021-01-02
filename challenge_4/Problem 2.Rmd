@@ -1,0 +1,83 @@
+---
+title: "Problem 2"
+output:
+  word_document: default
+  pdf_document: default
+---
+Loading of Required Packages
+```{r}
+library(caret)
+library(ggplot2)
+library(car)
+library(carData)
+library(lattice)
+library(MASS)
+library(gvlma)
+library(readxl)
+```
+
+Importing Data to R
+
+```{r}
+firedata <- read_excel("Forest Fires Data.xlsx")
+str(firedata)
+summary(firedata)
+firedata$Month <- as.factor(firedata$Month)
+firedata$Day <- as.factor(firedata$Day)
+```
+
+Scatter Plot Matrix
+
+```{r}
+firedata <- firedata[-c(512,105,466,469,475,238),]
+firedata1 <- firedata
+scatterplotMatrix(firedata[,-c(3,4,13)], main="Scatter Plot Matrix")
+```
+Initial Model 
+
+```{r}
+model1 <- lm(log(Area+1)~., data=firedata)
+summary(model1)
+```
+Performance Diagnostics using Typical Approach
+
+```{r}
+
+stepAIC(model1)
+model1 <- lm(log(Area + 1) ~ Month + DMC + Temp, data = firedata)
+summary(model1)
+stepAIC(model1)
+par(mfrow=c(2,2))
+plot(model1)
+```
+
+Performance Diagnostics using Enhanced Approach
+```{r}
+
+par(mfrow=c(1,1))
+
+#qqPlot(model1, labels=row.names(cdata1), id.method="identify", simulate=T, main="Q-Q Plot")
+
+
+
+crPlots(model1)
+
+ncvTest(model1)
+
+fit1 <- gvlma(model1)
+summary(fit1)
+
+sqrt(vif(model1))>2
+
+outlierTest(model1)
+
+influencePlot(model1, main="Influence Plot", sub="Circle Size is proportional to Cook's distance")
+
+```
+After removing outliers and selecting parameters given by the stepAIC approach to create new model
+```{r}
+model2 <- lm(log(Area + 1) ~ Month + DMC + Temp, data = firedata1)
+summary(model2)
+```
+
+Based on the regression analysis of the given data, it can be said that the model generated is not good enough to use for predictions of Area. Because some of the assumptions of linear regression model is not getting satisfied without removing major chunk of data. Hence it is better to use some other model or one can use some other attributes.

@@ -1,0 +1,213 @@
+---
+title: "Problem 1"
+output: word_document
+---
+Loading of Required Packages
+```{r}
+library(gvlma)
+library(MASS)
+library(readxl)
+library(car)
+library(carData)
+library(ggplot2)
+library(lattice)
+library(caret)
+```
+Loadind of Dataset
+```{r}
+cdata <- read_excel("Concrete Slump Test Data.xlsx")
+cor(cdata[,c(2,3,4,5,6,7,8)])
+```
+Scatter Plot Matrix
+```{r}
+scatterplotMatrix(cdata[,c(2,3,4,5,6,7,8)], main="Scatter Plot Matrix")
+```
+
+Initial Set of predictor variables:
+Cement, Slag, Fly Ash, Water, SP, Coarse Aggregate, Fine Aggregate
+
+Initial Response Variables
+Slump, Slump Flow, 28 Day Compressive Strength
+
+Potential Regression Model for Slump:
+
+```{r}
+cdata1 <- as.data.frame(cdata[,c("No","Cement","Slag","Fly Ash","Water","SP","Coarse Aggregate","Fine Aggregate","Slump","Slump Flow","28-day Compressive Strength")])
+fit1 <- lm( Slump^2~cdata1$Slag+cdata1$`Fly Ash`+cdata1$Water+cdata1$SP+cdata1$`Coarse Aggregate`+cdata1$`Fine Aggregate`, data = cdata1)
+summary(fit1)
+
+```
+
+Performance Diagnostics using Typical Approach
+
+```{r}
+par(mfrow=c(2,2))
+plot(fit1)
+```
+
+Performance Diagnostics using Enhanced Approach
+
+```{r}
+#Normality#
+par(mfrow=c(1,1))
+qqPlot(fit1, labels=row.names(cdata1), id.method="identify", simulate=T, main="Q-Q Plot")
+
+#Linearity#
+crPlots(fit1)
+
+#Homoskedasticity#
+ncvTest(fit1)
+spreadLevelPlot(fit1)
+
+#Global Validation#
+model1 <- gvlma(fit1)
+summary(model1)
+
+#Multicolinearity#
+sqrt(vif(fit1))>2
+
+#Unusual Observations#
+outlierTest(fit1)
+
+#High Leverage Points#
+influencePlot(fit1, main="Influence Plot", sub="Circle Size is proportional to Cook's distance")
+
+```
+
+Selection of Best Model Using Stepwise Regression with direction as Backward
+
+```{r}
+step(fit1, direction = "backward")
+```
+Applying corrective measures by removing outliers to attain normality.
+Based on the Step AIC approach reformulating the model with the given attributes and removing the insignificant attributes
+```{r}
+cdata1 <- cdata1[-c(8,69),]
+modfit1 <- lm( cdata1$Slump^2~cdata1$Slag+cdata1$Water)
+summary(modfit1)
+```
+
+
+
+Potential Regression Model for Slump Flow:
+
+```{r}
+cdata1 <- as.data.frame(cdata[,c("No","Cement","Slag","Fly Ash","Water","SP","Coarse Aggregate","Fine Aggregate","Slump","Slump Flow","28-day Compressive Strength")])
+fit2 <- lm( cdata1$`Slump Flow`~cdata1$Cement+cdata1$Slag+cdata1$`Fly Ash`+cdata1$Water+cdata1$SP+cdata1$`Coarse Aggregate`+cdata1$`Fine Aggregate`)
+summary(fit2)
+
+```
+
+Performance Diagnostics using Typical Approach
+
+```{r}
+par(mfrow=c(2,2))
+plot(fit2)
+```
+
+Performance Diagnostics using Enhanced Approach
+
+```{r}
+#Normality#
+par(mfrow=c(1,1))
+qqPlot(fit2, labels=row.names(cdata1), id.method="identify", simulate=T, main="Q-Q Plot")
+
+#Linearity#
+crPlots(fit2)
+
+#Homoskedasticity#
+ncvTest(fit2)
+spreadLevelPlot(fit2)
+
+#Global Validation#
+model2 <- gvlma(fit2)
+summary(model2)
+
+#Multicolinearity#
+sqrt(vif(fit2))>2
+
+#Unusual Observations#
+outlierTest(fit2)
+
+#High Leverage Points#
+influencePlot(fit2, main="Influence Plot", sub="Circle Size is proportional to Cook's distance")
+
+```
+
+Selection of Best Model Using Stepwise Regression with direction as Backward
+
+```{r}
+step(fit2, direction = "backward")
+```
+Applying corrective measures by removing outliers to attain normality.
+Based on the Step AIC approach reformulating the model with the given attributes and removing the insignificant attributes
+```{r}
+cdata1 <- cdata1[-c(41,69),]
+modfit2 <- lm(  cdata1$`Slump Flow` ~ cdata1$Cement + cdata1$`Fly Ash` + cdata1$Water + cdata1$`Coarse Aggregate` + cdata1$`Fine Aggregate`)
+summary(modfit2)
+model2 <- gvlma(modfit2)
+summary(model2)
+```
+
+Potential Regression Model for 28 Days Compressive Strength:
+
+```{r}
+cdata1 <- as.data.frame(cdata[,c("No","Cement","Slag","Fly Ash","Water","SP","Coarse Aggregate","Fine Aggregate","Slump","Slump Flow","28-day Compressive Strength")])
+fit3 <- lm( cdata1$`28-day Compressive Strength`~cdata1$Cement+cdata1$Slag+cdata1$`Fly Ash`+cdata1$Water+cdata1$SP+cdata1$`Coarse Aggregate`+cdata1$`Fine Aggregate`)
+summary(fit3)
+
+```
+
+Performance Diagnostics using Typical Approach
+
+```{r}
+par(mfrow=c(2,2))
+plot(fit3)
+```
+
+Performance Diagnostics using Enhanced Approach
+
+```{r}
+#Normality#
+par(mfrow=c(1,1))
+qqPlot(fit3, labels=row.names(cdata1), id.method="identify", simulate=T, main="Q-Q Plot")
+
+#Linearity#
+crPlots(fit3)
+
+#Homoskedasticity#
+ncvTest(fit3)
+spreadLevelPlot(fit3)
+
+#Global Validation#
+model3 <- gvlma(fit3)
+summary(model3)
+
+#Multicolinearity#
+sqrt(vif(fit3))>2
+
+#Unusual Observations#
+outlierTest(fit3)
+
+#High Leverage Points#
+influencePlot(fit3, main="Influence Plot", sub="Circle Size is proportional to Cook's distance")
+
+```
+
+Selection of Best Model Using Stepwise Regression with direction as Backward
+
+```{r}
+step(fit3, direction = "backward")
+```
+Applying corrective measures by removing outliers to attain normality.
+Based on the Step AIC approach reformulating the model with the given attributes and removing the insignificant attributes
+```{r}
+cdata1 <- cdata1[-c(8,49),]
+modfit3 <- lm( cdata1$`28-day Compressive Strength` ~ cdata1$Cement  + cdata1$`Fly Ash` + cdata1$Water + cdata1$`Coarse Aggregate` + 
+    cdata1$`Fine Aggregate` )
+summary(modfit3)
+model31 <- gvlma(modfit3)
+summary(model31)
+```
+
+Hence, it can be inferred that the given set of predictors can be used to predict the value of 28 Days Compressive Strength. For the other two response variables, some assumptions do not hold. If corrective measures are applied on that then there are chances of overfitting of model and loss of some important data.

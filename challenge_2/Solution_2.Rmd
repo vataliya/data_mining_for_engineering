@@ -1,0 +1,76 @@
+---
+title: "HW2"
+output: word_document
+---
+#Problem 1
+```{r}
+library(psych)
+data <-USJudgeRatings
+fa.parallel(data)
+pc<-principal(data[,-1],nfactors=1)
+pc
+rc<- principal(data,nfactors=1,rotate = "varimax", scores = TRUE)
+rc
+scores <- rc$scores
+scores
+factor.plot(rc)
+```
+
+#Problem2
+```{r}
+library(psych)
+library(readxl)
+data2<- read_excel("Glass Identification Data.xlsx")
+fa.parallel(data2, n.iter = 100,fa="pc",show.legend = FALSE, main = "Screen Plot with Parallel Analysis")
+library(GPArotation)
+pc2 <- principal(data2, nfactors = 4, rotate = "none")
+pc2
+rc2 <- principal(data2,nfactors = 4,rotate = "Varimax", scores = TRUE)
+rc2
+scores <- rc2$scores
+head(scores)
+factor.plot(rc2)
+```
+#Problem 3
+```{r}
+data3 <- Harman23.cor
+library(GPArotation)
+library(psych)
+options(digits = 2)
+covariances <- Harman23.cor$cov
+correlations <- cov2cor(covariances)
+correlations
+fa.parallel(correlations, n.obs = 112,fa="both", n.iter = 100, main = "Scree plot with parallel analysis")
+fa <- fa(correlations, nfactors = 2, rotate = "none", fm="pa")
+fa
+fa.varimax <- fa(correlations,nfactors=2, rotate="varimax", fm="pa")
+fa.varimax
+fa.promax <- fa(correlations,nfactors=2, rotate="promax", fm="pa")
+fa.promax
+factor.plot(fa.promax, labels = rownames(fa.promax$loadings))
+fa.diagram(fa.promax,simple = FALSE)
+
+```
+#Problem 4
+```{r}
+data4 <- Harman74.cor
+fa.parallel(data4$cov,fa="both", n.iter = 100, main = "Scree plot with parallel analysis")
+Scaled <-dist(data4$cov, method = "euclidean", diag = FALSE, upper = FALSE, p = 2)
+Scaling <- cmdscale(Scaled,k=2)
+Scaling
+factor.plot(Scaling)
+
+```
+#Problem 5
+```{r}
+library(readxl)
+data5<- read_excel("Vertebral Column Data.xlsx")
+str(data5)
+fa.parallel(data5[,-7],fa="both", n.iter = 100, main = "Scree plot with parallel analysis")
+Scaled2 <-dist(data5[,-7], method = "euclidean", diag = FALSE, upper = FALSE, p = 2)
+MultScale <- cmdscale(Scaled2,k=2)
+MultScale
+factor.plot(MultScale)
+
+```
+

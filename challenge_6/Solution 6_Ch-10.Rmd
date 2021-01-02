@@ -1,0 +1,159 @@
+---
+title: "HW6_10"
+output: word_document
+---
+# Problem 1
+```{r}
+install.packages("class")
+install.packages("caret", dependencies = TRUE)
+install.packages("pROC")
+library(class)
+library(caret)
+library(pROC)
+data <- read.csv("Banks.csv")
+data
+str(data)
+data$Financial.Condition <- factor(data$Financial.Condition)
+model <- glm(Financial.Condition~TotLns.Lses.Assets+TotExp.Assets, family = "binomial",data = data)
+summary(model)
+
+a <- predict(model, data, type="response")
+
+```
+Answer
+Estimated Equation logit as a function of predictors:
+
+```{r}
+# logit = -14.721 + 8.371TotLns.Lses.Assets + 89.834TotExp.Assests odds = exp(-14.721 + 8.371TotLns.Lses.Assets + 89.834TotExp.Assests) probability = 1/(1+exp(-(-14.721 + 8.371TotLns.Lses.Assets + 89.834TotExp.Assests)))
+# Based on the logitisc equation one can interpret that, one unit increase in the Total Loans & Leases to Assets ratio will increase the odds of a bank becoming financially weak by the factor of exp(8.731)= 6191.917. Similarly One unit increase in Tptal Expenses to Assets ration increase the odds of a bank becoming financially weak by the factor of exp(89.834)= 1.0337e+39.
+logit <- predict(model, newdata = data.frame(TotLns.Lses.Assets= 0.6,TotExp.Assets= 0.11), type="response")
+odds <- exp(logit)
+probability <- odds/(1+odds)
+Financial_Condition <- ifelse(probability> 0.5, "Weak", "Strong")
+logit
+
+odds  
+probability
+Financial_Condition
+cutoff <- 0.5
+odds_cutoff <- cutoff/(1-cutoff)
+logit_cutoff <- log(odds_cutoff)
+# When probability cutoff is 0.5, threshold for Odds is 1 and for logit is 0.
+analysis <- roc(response=data$Financial.Condition, predictor=a)
+e <- cbind(analysis$thresholds,analysis$sensitivities+analysis$specificities)
+opt_cutoff <- subset(e,e[,2]==max(e[,2]))[,1]
+opt_cutoff
+```
+To minimize current expected cost of mis-classification cutoff value for the classification should be decreased to 0.45467.
+
+# Problem 2
+
+```{r}
+install.packages("e1071")
+library(caret)
+library(ggplot2)
+library(pROC)
+data <- read.csv("D:/NEU/7. IE7275 Data Mining for Engineering/Homeworks/HW6/SystemAdministrators.csv")
+str(data)
+levels(data$Completed.task) <- c(0,1)
+ggplot(data, aes(y = Experience, x = Training)) + geom_point(aes(color=Completed.task))
+# Experience is the predictor which is most influencial on the response variable based on the scatter plot.
+model <- glm(Completed.task~Experience+Training, data = data, family = "binomial")
+summary(model)
+pred <- predict(model, newdata= data, type= "response")
+a1 <- ifelse(pred>0.5,1,0)
+confusionMatrix(as.factor(a1), data$Completed.task)
+```
+
+Among those who completed the task, the percentage of programmers incorrectly classified as failing to complete the task is given by (1-Specificity)100 = (1-0.6667)100 = 33.33%
+
+To decrease the percentage, cut-off probability should be decreased.
+```{r}
+cutoff <- 0.5
+logit <- log(cutoff/(1-cutoff))
+tra <- 4
+ExpReq <- (logit+10.9813-0.1805*tra)/1.1269
+ExpReq
+```
+# 9.104 years of experience must be accumulated by a programmer with 4 years of training before his or her estimated probability of completing the task exceeds 0.5.
+
+# Problem 3
+
+```{r}
+library(ggplot2)
+library(carData)
+library(lattice)
+library(caret)
+library(ROCR)
+library(dummies)
+library(psych)
+library(car)
+```
+```{r}
+#install.packages("lme4", repos="http://cran.rstudio.com/",type = "binary", dependencies=TRUE)
+#install.packages("nlme", repos="http://cran.rstudio.com/",type = "binary", dependencies=TRUE)
+#packageurl <- "https://cran.r-project.org/src/contrib/Archive/pbkrtest/pbkrtest_0.4-4.tar.gz" 
+#install.packages(packageurl, repos=NULL, type="source")
+```
+
+```{r}
+auction <-read.csv('D:/NEU/7. IE7275 Data Mining for Engineering/Homeworks/HW6/eBayAuctions.csv')
+auction$Duration <- as.factor(auction$Duration)
+auction$Competitive. <- as.factor(auction$Competitive.)
+str(auction)
+```
+
+Creating Dummy Variables
+```{r}
+auction_dummy <- cbind(auction,dummy(auction$Category,sep = "category"), dummy(auction$currency, sep = "Currency"), dummy(auction$Duration, sep = "Duration"), dummy(auction$endDay, sep = "endday"))
+
+```
+
+Data Partitioning
+```{r}
+set.seed(1234)
+ind <- sample(2, nrow(auction), replace = T, prob = c(0.6,0.4))
+train <- auction[ind==1,]
+valid <- auction[ind==2,]
+
+```
+
+Model 1 using all predictors
+```{r}
+model1 <- glm(Competitive.~.,data = train, family = "binomial")
+summary(model1)
+pred1 <- predict(model1, newdata = valid, type = "response")
+pred1 <- as.factor(ifelse(pred1>0.5,1,0))
+confusionMatrix(pred1, valid[,8])
+```
+
+Model using all predictors excpt Closing Price
+```{r}
+model2 <- glm(Competitive.~Category+currency+sellerRating+Duration+endDay+OpenPrice,data = train, family = "binomial")
+summary(model2)
+pred2 <- predict(model2, newdata = valid, type = "response")
+pred2 <- as.factor(ifelse(pred2>0.5,1,0))
+confusionMatrix(pred2, valid[,8])
+```
+
+Based on the results of both the model it can be seen that the model with closing price is more accurate than the one without closing price.
+```{r}
+summary(model1)
+```
+
+Co-efficient of Close price is 0.0865 and is statistically significant as the p value for the same is very less. It means that unit increase in close price actually increases the chances of auction being competitive by a factor of 0.0865.
+
+Finding Best Model
+```{r}
+best1 <- step(model1, direction = "both")
+pred3 <- predict(best1, newdata = valid, type = "response")
+pred3 <- as.factor(ifelse(pred3>0.5,1,0))
+confusionMatrix(pred3, valid[,8])
+test1 <- predict(model1, newdata = train, type="response")
+head(test1)
+test1 <- as.factor(ifelse(test1>0.5,1,0))
+head(test1)
+summary(test1)
+confusionMatrix(test1, train[,8])
+```
+
